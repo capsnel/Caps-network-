@@ -1,24 +1,22 @@
 import os
-import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import logging
 
 # Enable logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # In-memory data stores
-user_data = {}
-available_tasks = {}
+user_data = {}  # Stores user info
+available_tasks = {}  # Format: {"Task name": "https://link.com"}
 
-# Load from environment variables
-bot_token = os.getenv("BOT_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")  # should be string, as Telegram user ID is compared as string
+# Fetch your bot's token and admin ID directly from environment variables
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Ensure you've set this environment variable
+ADMIN_ID = os.getenv("ADMIN_ID")  # Ensure you've set this environment variable
 
-# /start
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -51,7 +49,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("✅ You’re already registered.")
 
-# /balance
+# /balance command
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = user_data.get(update.effective_user.id)
     if not user:
@@ -59,7 +57,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text(f"💰 Your balance: {user['points']} points")
 
-# /set_payout
+# /set_payout (wallet or bank)
 async def set_payout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = user_data.get(update.effective_user.id)
     if not user:
@@ -82,7 +80,7 @@ async def available_tasks_command(update: Update, context: ContextTypes.DEFAULT_
         msg += f"{i}. {task} - {link}\n"
     await update.message.reply_text(msg)
 
-# /complete_task
+# /complete_task <task_number>
 async def complete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user = user_data.get(user_id)
@@ -96,7 +94,7 @@ async def complete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
         task_num = int(context.args[0]) - 1
         task_list = list(available_tasks.items())
         if 0 <= task_num < len(task_list):
-            task_name, _ = task_list[task_num]
+            task_name, task_link = task_list[task_num]
             user["points"] += 100
             await update.message.reply_text(
                 f"✅ Task completed: {task_name}\nYou earned 100 points!"
@@ -148,7 +146,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     await update.message.reply_text(msg)
 
-# /add_task
+# /add_task "task name" url
 async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text("❌ Admin only.")
@@ -161,7 +159,7 @@ async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_tasks[task_name] = task_link
     await update.message.reply_text(f"✅ Task added: {task_name} - {task_link}")
 
-# /credit_user
+# /credit_user <user_id> <points>
 async def credit_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text("❌ Admin only.")
@@ -180,9 +178,9 @@ async def credit_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text("❌ Invalid input.")
 
-# Run the bot
+# Bot start function
 def main():
-    app = Application.builder().token(bot_token).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("balance", balance))
