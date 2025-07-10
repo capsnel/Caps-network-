@@ -1,7 +1,7 @@
 import os
+import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-import logging
 
 # Enable logging
 logging.basicConfig(
@@ -11,13 +11,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # In-memory data stores
-user_data = {}  # Stores user info
-available_tasks = {}  # Format: {"Task name": "https://link.com"}
+user_data = {}
+available_tasks = {}
 
-# Replace with your actual Telegram ID
-ADMIN_ID = "your_telegram_user_id"  # e.g., "123456789"
+# Load from environment variables
+bot_token = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID")  # should be string, as Telegram user ID is compared as string
 
-# /start command
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -95,7 +96,7 @@ async def complete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
         task_num = int(context.args[0]) - 1
         task_list = list(available_tasks.items())
         if 0 <= task_num < len(task_list):
-            task_name, task_link = task_list[task_num]
+            task_name, _ = task_list[task_num]
             user["points"] += 100
             await update.message.reply_text(
                 f"✅ Task completed: {task_name}\nYou earned 100 points!"
@@ -179,15 +180,8 @@ async def credit_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text("❌ Invalid input.")
 
-# Bot start function
+# Run the bot
 def main():
-    import asyncio
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    from telegram.ext import Application
-
-    bot_token = os.getenv("BOT_TOKEN")  # Load from environment variable
     app = Application.builder().token(bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
