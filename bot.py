@@ -2,11 +2,12 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import logging
-from keep_alive import keep_alive  # For Replit hosting
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 # In-memory data stores
@@ -49,7 +50,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("✅ You’re already registered.")
 
-# /balance command
+# /balance
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = user_data.get(update.effective_user.id)
     if not user:
@@ -57,7 +58,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text(f"💰 Your balance: {user['points']} points")
 
-# /set_payout (wallet or bank)
+# /set_payout
 async def set_payout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = user_data.get(update.effective_user.id)
     if not user:
@@ -80,7 +81,7 @@ async def available_tasks_command(update: Update, context: ContextTypes.DEFAULT_
         msg += f"{i}. {task} - {link}\n"
     await update.message.reply_text(msg)
 
-# /complete_task <task_number>
+# /complete_task
 async def complete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user = user_data.get(user_id)
@@ -146,7 +147,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     await update.message.reply_text(msg)
 
-# /add_task "task name" url
+# /add_task
 async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text("❌ Admin only.")
@@ -159,7 +160,7 @@ async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_tasks[task_name] = task_link
     await update.message.reply_text(f"✅ Task added: {task_name} - {task_link}")
 
-# /credit_user <user_id> <points>
+# /credit_user
 async def credit_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text("❌ Admin only.")
@@ -180,8 +181,13 @@ async def credit_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Bot start function
 def main():
-    keep_alive()  # For Replit
-    bot_token = os.getenv("BOT_TOKEN")  # Fetch the bot token from the environment variable
+    import asyncio
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    from telegram.ext import Application
+
+    bot_token = os.getenv("BOT_TOKEN")  # Load from environment variable
     app = Application.builder().token(bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
